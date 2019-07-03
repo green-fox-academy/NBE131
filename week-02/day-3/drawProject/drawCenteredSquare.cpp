@@ -7,12 +7,12 @@ const int SCREEN_HEIGHT = 480;
 
 void draw(SDL_Renderer* gRenderer) {
 
-    auto squareSize =100;
+    auto squareSize =177;
     int cornerX = (SCREEN_WIDTH - squareSize) / 2;
     int cornerY = (SCREEN_HEIGHT - squareSize) / 2;
 
     //choose color
-    SDL_SetRenderDrawColor(gRenderer, 0x00, 0xFF, 0x00, 0xFF);
+    SDL_SetRenderDrawColor(gRenderer, 0x74, 0xD4, 0x44, 0xFF);
 //create a rectangle
     SDL_Rect fillRect = { cornerX, cornerY, squareSize, squareSize};
 
