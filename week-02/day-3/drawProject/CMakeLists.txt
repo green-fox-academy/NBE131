@@ -10,7 +10,7 @@ IF(WIN32)
 
 ENDIF()
 
-set(EXECUTABLES "draw;draw2")
+set(EXECUTABLES "draw;draw2;drawDiagonals;drawToCenter;drawHorizontalLines;drawCenteredSquare;drawFourRectangles;drawCenterBoxFunction;drawRainbowBoxFunction;drawPurpleSteps;drawPurpleSteps3D;drawCheckerBoard;drawAllLinesToCenter;drawSuperHexagon;drawStarryNight;drawTriangles")
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 find_package(GFA_SDL2 REQUIRED)

@@ -1,6 +1,12 @@
 #include <iostream>
 #include <SDL.h>
 #include "draw.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+
+
 
 //Screen dimension constants
 const int SCREEN_WIDTH = 640;
@@ -83,6 +89,8 @@ int main(int argc, char *args[]) {
         //Clear screen
         SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
         SDL_RenderClear(gRenderer);
+
+        srand(time(0));
 
         draw(gRenderer);
 

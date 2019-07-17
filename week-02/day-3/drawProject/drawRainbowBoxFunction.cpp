@@ -35,16 +35,16 @@ void draw(SDL_Renderer *gRenderer)
 
     int squareSize = SCREEN_HEIGHT;
 
-    for (int i = 0; i < 11; ++i) {
+    for (int i = 0; i < 12; ++i) {
 
         //randomize color vector
-        //int colorR = rand() % 254;
-        //int colorG = rand() % 254;
-        //int colorB = rand() % 254;
-        //std::vector<int> fillColor = {colorR, colorG, colorB};
+        int colorR = rand() % 254;
+        int colorG = rand() % 254;
+        int colorB = rand() % 254;
+        std::vector<int> fillColor = {colorR, colorG, colorB};
 
 
-        std::vector<int> fillColor = colorSet[i];
+        // std::vector<int> fillColor = colorSet[i];
 
         centerBox(squareSize, fillColor, gRenderer);
 
