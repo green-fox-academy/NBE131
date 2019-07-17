@@ -8,7 +8,7 @@ class Violin : public StringedInstrument
 public:
 
 
-    Violin(int numberOfStrings);
+    explicit Violin(int numberOfStrings);
 
     Violin();
 

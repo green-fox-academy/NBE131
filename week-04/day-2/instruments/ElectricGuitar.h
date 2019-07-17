@@ -7,7 +7,7 @@ class ElectricGuitar : public StringedInstrument
 {
 public:
 
-    ElectricGuitar(int numberOfStrings);
+    explicit ElectricGuitar(int numberOfStrings);
 
     ElectricGuitar();
 

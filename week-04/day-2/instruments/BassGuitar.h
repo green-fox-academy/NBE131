@@ -6,7 +6,7 @@
 class BassGuitar : public StringedInstrument
 {
 public:
-    BassGuitar(int numberOfStrings);
+    explicit BassGuitar(int numberOfStrings);
 
     BassGuitar();
 
