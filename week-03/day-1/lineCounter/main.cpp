@@ -13,7 +13,7 @@ int lineCounter(std::string);
 int main()
 {
     std::vector<std::string> fileContents = {
-            "Boci boci tarka", "Se fule se farka", "Oda megyunk lakni", "Ahol tejet kapni.","teszt"
+            "Boci boci tarka", "Se fule se farka", "Oda megyunk lakni", "Ahol tejet kapni.", "teszt"
 
     };
 
@@ -39,7 +39,7 @@ int main()
     return 0;
 }
 
-int lineCounter(const std::string &inputFile)
+int lineCounter(std::string inputFile)
 {
     std::ifstream fileIn(inputFile);
     if (fileIn.is_open()) {
