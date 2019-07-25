@@ -4,8 +4,3 @@ Bird::Bird(std::string name)
 {
     _name = name;
 }
-
-std::string Bird::getName()
-{
-    return _name;
-}

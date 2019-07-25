@@ -9,7 +9,7 @@ class Reptile : public EggLayer
 public:
     explicit Reptile(std::string name);
 
-    std::string getName() override;
+
 
 };
 

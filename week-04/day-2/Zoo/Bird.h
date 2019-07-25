@@ -8,7 +8,7 @@ class Bird : public EggLayer
 public:
     explicit Bird(std::string name);
 
-    std::string getName() override;
+
 
 };
 

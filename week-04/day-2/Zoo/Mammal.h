@@ -10,8 +10,6 @@ public:
 
     explicit Mammal(std::string name);
 
-    std::string getName() override;
-
 };
 
 
