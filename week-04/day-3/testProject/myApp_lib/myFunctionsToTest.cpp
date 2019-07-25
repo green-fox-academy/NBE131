@@ -1,18 +1,18 @@
-#include "myClass.h"
+#include "myFunctionsToTest.h"
 #include <string>
 #include <algorithm>
 
-myClass::myClass()
+myFunctionsToTest::myFunctionsToTest()
 {
 
 }
 
-std::string myClass::getApple()
+std::string myFunctionsToTest::getApple()
 {
     return "apple";
 }
 
-int myClass::sum(std::vector<int> _inputVector)
+int myFunctionsToTest::sum(std::vector<int> _inputVector)
 {
     int _sum = 0;
     for (int i = 0; i < _inputVector.size(); ++i) {
@@ -21,7 +21,7 @@ int myClass::sum(std::vector<int> _inputVector)
     return _sum;
 }
 
-bool myClass::isAnagram(const std::string &_string1, const std::string &_string2)
+bool myFunctionsToTest::isAnagram(const std::string &_string1, const std::string &_string2)
 {
     if ((_string1.size()) != (_string2.size())) {
         return false;
@@ -42,7 +42,7 @@ bool myClass::isAnagram(const std::string &_string1, const std::string &_string2
 
 }
 
-int myClass::fibonacci(unsigned int input)
+int myFunctionsToTest::fibonacci(unsigned int input)
 {
     int prevPrevNumber = 0;
     int prevNumber = 1;

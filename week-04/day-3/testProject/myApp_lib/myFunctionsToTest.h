@@ -1,13 +1,13 @@
-#ifndef TESTPROJECT_MYCLASS_H
-#define TESTPROJECT_MYCLASS_H
+#ifndef TESTPROJECT_MYFUNCTIONSTOTEST_H
+#define TESTPROJECT_MYFUNCTIONSTOTEST_H
 #include <string>
 #include <vector>
 
-class myClass
+class myFunctionsToTest
 
 {
 public:
-    myClass();
+    myFunctionsToTest();
 
     std::string getApple();
     int sum(std::vector<int>);
@@ -22,4 +22,4 @@ protected:
 };
 
 
-#endif //TESTPROJECT_MYCLASS_H
+#endif //TESTPROJECT_MYFUNCTIONSTOTEST_H

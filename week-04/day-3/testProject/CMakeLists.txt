@@ -20,7 +20,7 @@ project(${PROJECT_NAME})
 set(CMAKE_CXX_STANDARD 14)
 
 # The next line creates an executable file from main.cpp with the same name as your project
-add_executable(${PROJECT_NAME} main.cpp myApp_lib/myClass.cpp myApp_lib/myClass.h)
+add_executable(${PROJECT_NAME} main.cpp myApp_lib/myFunctionsToTest.cpp myApp_lib/myFunctionsToTest.h)
 
 # This block includes the subdirectories containing your code and tests
 include_directories(${PROJECT_LIB_NAME})

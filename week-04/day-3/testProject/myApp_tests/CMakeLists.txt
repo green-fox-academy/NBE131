@@ -4,7 +4,7 @@ project(testProject)
 set(CMAKE_CXX_STANDARD 14)
 
 # Add all your .cpp files here (separated by spaces)
-# add_library(myApp_lib/myClass.cpp)
+# add_library(myApp_lib/myFunctionsToTest.cpp)
 
 # add_executable(testProject main.cpp)
 
