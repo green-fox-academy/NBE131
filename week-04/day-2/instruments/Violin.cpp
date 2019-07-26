@@ -1,19 +1,19 @@
 #include "Violin.h"
 #include <iostream>
 
-Violin::Violin()
-{
-    _numberOfStrings = 4;
-    _name = "Violin";
-}
 
-Violin::Violin(int numberOfStrings)
-{
-    _numberOfStrings = numberOfStrings;
-    _name = "Violin";
-}
+Violin::Violin() : StringedInstrument("Violin", 4)
+{}
+
+
+Violin::Violin(int numberOfStrings) : StringedInstrument("Violin", numberOfStrings)
+{}
+
 
 std::string Violin::sound()
 {
     return "Screech";
 }
+
+
+

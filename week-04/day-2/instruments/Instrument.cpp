@@ -1,7 +1,5 @@
 #include "Instrument.h"
 #include <iostream>
 
-Instrument::Instrument()
-{
-
-}
+Instrument::Instrument(const std::string &name) : _name(name)
+{}

@@ -6,9 +6,9 @@
 class BassGuitar : public StringedInstrument
 {
 public:
-    explicit BassGuitar(int numberOfStrings);
-
     BassGuitar();
+
+    explicit BassGuitar(int numberOfStrings);
 
     std::string sound() override;
 

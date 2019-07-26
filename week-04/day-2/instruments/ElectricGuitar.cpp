@@ -1,19 +1,19 @@
 #include "ElectricGuitar.h"
 #include <iostream>
 
-ElectricGuitar::ElectricGuitar()
-{
-    _numberOfStrings = 6;
-    _name = "Electric Guitar";
-}
 
-ElectricGuitar::ElectricGuitar(int numberOfStrings)
-{
-    _numberOfStrings = numberOfStrings;
-    _name = "Electric Guitar";
-}
+ElectricGuitar::ElectricGuitar(int numberOfStrings) : StringedInstrument("Electric Guitar", numberOfStrings)
+{}
+
+ElectricGuitar::ElectricGuitar() : StringedInstrument("Electric Guitar", 6)
+{}
+
 
 std::string ElectricGuitar::sound()
 {
     return "Twang";
 }
+
+
+
+

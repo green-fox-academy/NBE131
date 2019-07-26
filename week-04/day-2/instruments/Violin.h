@@ -8,9 +8,9 @@ class Violin : public StringedInstrument
 public:
 
 
-    explicit Violin(int numberOfStrings);
-
     Violin();
+
+    explicit Violin(int numberOfStrings);
 
     std::string sound() override;
 

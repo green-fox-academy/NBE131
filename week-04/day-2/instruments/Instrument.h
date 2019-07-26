@@ -7,7 +7,7 @@ class Instrument
 {
 public:
 
-    Instrument();
+    explicit Instrument(const std::string &name);
 
     virtual void play() = 0;
 

@@ -8,7 +8,8 @@ class StringedInstrument : public Instrument
 {
 public:
 
-    StringedInstrument();
+
+    StringedInstrument(const std::string &name, int numberOfStrings);
 
     virtual std::string sound() = 0;
 
