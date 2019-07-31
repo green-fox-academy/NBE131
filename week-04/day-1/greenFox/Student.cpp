@@ -16,7 +16,7 @@ Student::Student()
 
 void Student::introduce() const
 {
-    std::cout << "Hi, I'm " << _name << ", a(n) " << _age << " years old " << Person::genderToString() << " from "
+    std::cout << "Hi, I'm " << _name << ", a(n) " << _age << " years old " << genderToString() << " from "
               << _previousOrganization << ", who skipped " << _skippedDays << " days from the course already."
               << std::endl;
 

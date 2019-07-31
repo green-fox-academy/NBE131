@@ -22,7 +22,7 @@ void Mentor::getGoal() const
 void Mentor::introduce() const
 {
 
-    std::cout << "Hi, I'm " << _name << ", a(n) " << _age << " years old " << Person::genderToString() << ", "
+    std::cout << "Hi, I'm " << _name << ", a(n) " << _age << " years old " << genderToString() << ", "
               << Mentor::levelToString() << " mentor." << std::endl;
 }
 

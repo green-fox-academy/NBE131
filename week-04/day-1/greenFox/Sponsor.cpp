@@ -17,7 +17,7 @@ Sponsor::Sponsor()
 
 void Sponsor::introduce() const
 {
-    std::cout << "Hi, I'm " << _name << ", a(n) " << _age << " years old " << Person::genderToString()
+    std::cout << "Hi, I'm " << _name << ", a(n) " << _age << " years old " << genderToString()
               << ", who represents " << _company
               << ", and hired " << _hiredStudents << " students so far." << std::endl;
 }
