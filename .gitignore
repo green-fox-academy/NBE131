@@ -134,4 +134,8 @@ modules.xml
 # Ignore all local history of files
 .history
 
+### Onenote TOC ###
+*.onetoc2
+
+
 # End of https://www.gitignore.io/api/c++,clion+all,visualstudiocode
