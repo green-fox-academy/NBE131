@@ -5,32 +5,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int IsEqual(int, int);
+int is_equal(int, int);
 
 int main()
 {
-    int Number1;
-    int Number2;
+    int number1;
+    int number2;
 
     printf("Hello, please give the first number \n");
-    scanf("%d", &Number1);
+    scanf("%d", &number1);
 
     printf("Hello, please give the second number \n");
-    scanf("%d", &Number2);
+    scanf("%d", &number2);
 
-    printf("%d", IsEqual(Number1,Number2));
+    printf("%d", is_equal(number1,number2));
 
     return 0;
 }
 
-int IsEqual(int Number1, int Number2)
+int is_equal(int number1, int number2)
 {
 
-    if (Number1 == Number2) {
-        return 1;
-
-    } else {
-        return 0;
-    }
+    return number1 == number2;
 
 }

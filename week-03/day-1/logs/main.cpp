@@ -9,6 +9,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 float gPRatio(const std::string &);
 
@@ -17,12 +18,14 @@ std::vector<std::string> getIPs(const std::string &);
 
 int main()
 {
+    std::cout << "GET/POST - ratio: " <<
+              gPRatio("../log.txt") << std::endl;
 
-    gPRatio("../log.txt");
+    std::cout << "Unique IPs:" << std::endl;
 
     auto answer = getIPs("../log.txt");
     for (int i = 0; i < answer.size(); ++i) {
-        std::cout << answer[i];
+        std::cout << answer[i] << std::endl;
     }
 
     return 0;
@@ -53,6 +56,7 @@ float gPRatio(const std::string &inputFile)
             }
 
         }
+
     } else {
 
         std::cout << "Can't open file to read." << std::endl;
@@ -61,11 +65,11 @@ float gPRatio(const std::string &inputFile)
 
     input.close();
 
-    float GPRatio = (float) getCounter / postCounter;
+    float getPostRatio = (float) getCounter / postCounter;
 
-    std::cout << GPRatio;
+   // std::cout << getPostRatio;
 
-    return GPRatio;
+    return getPostRatio;
 }
 
 
@@ -77,66 +81,40 @@ std::vector<std::string> getIPs(const std::string &inputFile)
 
     if (input.is_open()) {
 
-        // std::string IP;
         std::string line;
-        std::string correctedLine;
-        std::string correctedLine2;
+
+        while (getline(input, line)) {
 
 
-        char c;
-        int spaceCounter = 0;
+            std::stringstream stringStream(line);
 
-        while (input.get(c)) {
+            std::string day;
+            stringStream >> day;
+            std::string month;
+            stringStream >> month;
+            std::string date;
+            stringStream >> date;
+            std::string time;
+            stringStream >> time;
+            std::string year;
+            stringStream >> year;
+            std::string IP;
+            stringStream >> IP;
+            std::string transaction;
+            stringStream >> transaction;
 
-            std::stringstream correctedInput(correctedLine);
+            uniqueIPs.push_back(IP);
 
-            if (c == ' ' && spaceCounter == 0) {
-                while (getline(correctedInput, correctedLine2)) {
-                    std::stringstream StringStream(correctedLine2);
+            std::sort(uniqueIPs.begin(), uniqueIPs.end());
 
-                    std::string day;
-                    std::string month;
-                    std::string date;
-                    std::string time;
-                    std::string year;
-                    std::string IP;
-                    std::string transaction;
-
-
-                    getline(StringStream, day, ' ');
-                    getline(StringStream, month, ' ');
-                    getline(StringStream, date, ' ');
-                    getline(StringStream, time, ' ');
-                    getline(StringStream, year, ' ');
-                    getline(StringStream, IP, ' ');
-
-                    std::cout << IP << std::endl;
-
-                    getline(StringStream, transaction, ' ');
-
-
-                    for (int i = 0; i < uniqueIPs.size(); ++i) {
-
-
-                        if (IP == uniqueIPs[i]) {
-
-                        } else {
-                            uniqueIPs.push_back(IP);
-                        }
-                    }
+            for (int i = 1; i <= uniqueIPs.size(); ++i) {
+                if (uniqueIPs[i] == uniqueIPs[i - 1]) {
+                    uniqueIPs.erase(uniqueIPs.begin() + i);
                 }
-
-                spaceCounter++;
-                correctedLine += c;
-            } else if (c == ' ' && spaceCounter > 0) {
-                spaceCounter++;
-            } else if (c != ' ' && spaceCounter != 0) {
-                spaceCounter = 0;
             }
 
 
         }
-
 
     } else {
 

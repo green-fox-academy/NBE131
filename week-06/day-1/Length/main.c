@@ -7,9 +7,9 @@
 #include <string.h>
 
 
-int HowLong(char[]);
+int how_long(char[]);
 
-int MyHowLong(char[]);
+int my_how_long(char[]);
 
 
 int main()
@@ -21,21 +21,21 @@ int main()
     scanf("%s", name);
 
 
-    printf("Your name is %d characters long.\n", HowLong(name));
+    printf("Your name is %d characters long.\n", how_long(name));
 
-    printf("Your name is %d characters long. \n", MyHowLong(name));
+    printf("Your name is %d characters long. \n", my_how_long(name));
 
     return 0;
 }
 
 
-int HowLong(char *name)
+int how_long(char *name)
 {
     return strlen(name);
 }
 
 
-int MyHowLong(char *name)
+int my_how_long(char *name)
 {
     int length = 0;
 
