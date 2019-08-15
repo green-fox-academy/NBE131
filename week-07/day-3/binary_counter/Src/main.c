@@ -177,20 +177,6 @@ static void MX_GPIO_Init(void) {
 }
 
 /* USER CODE BEGIN 4 */
-/*
- for i++
-
- getBit(i, 0) -> led1
- getBit(i, 1) -> led2
- getBit(i, 2) -> led3
- getBit(i, 3) -> led4
-
-
-
- int getBit(int number, int bitPlace){
- return ;
- }
- */
 
 void bin_counter(int input) {
 
