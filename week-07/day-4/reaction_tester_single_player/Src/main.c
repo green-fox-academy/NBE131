@@ -25,6 +25,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 // #include "stm32746g_discovery.h"
+ #include "../../../../STM32Cube/Repository/STM32Cube_FW_F7_V1.15.0/Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_lcd.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -92,7 +94,12 @@ SDRAM_HandleTypeDef hsdram1;
 volatile unsigned int delay;
 volatile unsigned int round_start_time;
 volatile unsigned int round_counter = 0;
+volatile unsigned int valid_round_counter_1 = 0;
 volatile unsigned int reaction_time_1;
+volatile unsigned int reaction_time_1_sum;
+volatile unsigned int reaction_time_1_average;
+
+
 game_state_t game_state = READY;
 
 /* USER CODE END PV */
@@ -161,6 +168,18 @@ int main(void)
 
   /* USER CODE BEGIN SysInit */
 
+  BSP_LCD_Init();
+  BSP_LCD_LayerDefaultInit(1, LCD_FB_START_ADDRESS);
+  BSP_LCD_SelectLayer(1);
+  //BSP_LCD_SetLayerVisible(1, 1);
+  BSP_LCD_SetFont(&LCD_DEFAULT_FONT);
+  BSP_LCD_SetBackColor(LCD_COLOR_BLUE);
+  BSP_LCD_SetTextColor(LCD_COLOR_YELLOW);
+  BSP_LCD_DisplayOn();
+  BSP_LCD_Clear(LCD_COLOR_BLACK);
+
+
+
   //RNG->CR |= RNG_CR_RNGEN;
   /* USER CODE END SysInit */
 
@@ -190,6 +209,10 @@ int main(void)
   /* USER CODE BEGIN 2 */
  // BSP_LED_Init(LED_GREEN);
 
+
+
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -198,8 +221,17 @@ int main(void)
 
     if (round_counter > 4) {
                    round_counter = 0;
+
                    HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
-                   HAL_Delay(3000);
+                   char * average;
+                   reaction_time_1_average = reaction_time_1_sum / valid_round_counter_1;
+                           sprintf(average, "Valid average: %d ms.", reaction_time_1_average);
+
+                           BSP_LCD_DisplayStringAt(20, 160, average, CENTER_MODE);
+                   HAL_Delay(5000);
+                   BSP_LCD_Clear(LCD_COLOR_BLACK);
+                   valid_round_counter_1 =0;
+                   reaction_time_1_sum =0;
                    game_state = READY;
 
                    //return;
@@ -208,6 +240,8 @@ int main(void)
 
     switch (game_state) {
     case READY:
+        BSP_LCD_DisplayStringAt(20, 20, "Welcome to Reaction Tester", CENTER_MODE);
+        BSP_LCD_DisplayStringAt(20, 40, "Press button to start!", CENTER_MODE);
 
          HAL_GPIO_TogglePin(RED_LED_GPIO_Port, RED_LED_Pin);
          HAL_Delay(500);
@@ -262,13 +296,20 @@ int main(void)
          HAL_GPIO_WritePin(RGB_LED1_G_GPIO_Port, RGB_LED1_G_Pin, GPIO_PIN_SET);
 
          round_counter = round_counter + 1;
+         valid_round_counter_1 = valid_round_counter_1 + 1;
+         reaction_time_1_sum = reaction_time_1_sum + reaction_time_1;
+
+         char * result;
+         sprintf(result, "Reaction Time: %d ms.", reaction_time_1);
+
+         BSP_LCD_DisplayStringAt(20, 20 + round_counter*20, result, LEFT_MODE);
 
          game_state = STEADY;
 
          break;
 
 
-    case  INVALID:
+    case INVALID:
          //BSP_LED_On(LED_GREEN);
          HAL_GPIO_WritePin(RGB_LED1_R_GPIO_Port, RGB_LED1_R_Pin, GPIO_PIN_RESET);
          HAL_Delay(3000);
@@ -276,13 +317,17 @@ int main(void)
 
          round_counter = round_counter + 1;
 
+
+                 BSP_LCD_DisplayStringAt(20, 20 + round_counter*20,"Jumped light-invalid round!", LEFT_MODE);
+
+
          game_state = STEADY;
 
          break;
 
     default:
 
-      break;
+         break;
 
     }
 
@@ -1685,6 +1730,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   case STARTER_BUTTON_Pin:
 
     if (round_counter == 0){
+    BSP_LCD_Clear(LCD_COLOR_BLACK);
     game_state = STEADY;
     }
     break;
@@ -1696,7 +1742,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
    button_press_time = HAL_GetTick();
 
-    reaction_time_1 = button_press_time - round_start_time;
 
     switch (game_state){
     case STEADY:
@@ -1708,6 +1753,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
 
     case GO:
+
+      reaction_time_1 = button_press_time - round_start_time;
 
       game_state = VALID;
 
