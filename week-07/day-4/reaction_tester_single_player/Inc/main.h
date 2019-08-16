@@ -84,8 +84,9 @@ void Error_Handler(void);
 #define SPDIF_RX0_GPIO_Port GPIOD
 #define SDMMC_CK_Pin GPIO_PIN_12
 #define SDMMC_CK_GPIO_Port GPIOC
-#define ARDUINO_PWM_D9_Pin GPIO_PIN_15
-#define ARDUINO_PWM_D9_GPIO_Port GPIOA
+#define GAME_BUTTON_1_Pin GPIO_PIN_15
+#define GAME_BUTTON_1_GPIO_Port GPIOA
+#define GAME_BUTTON_1_EXTI_IRQn EXTI15_10_IRQn
 #define SWCLK_Pin GPIO_PIN_14
 #define SWCLK_GPIO_Port GPIOA
 #define SWDIO_Pin GPIO_PIN_13
@@ -206,6 +207,7 @@ void Error_Handler(void);
 #define FMC_A2_GPIO_Port GPIOF
 #define LCD_INT_Pin GPIO_PIN_13
 #define LCD_INT_GPIO_Port GPIOI
+#define LCD_INT_EXTI_IRQn EXTI15_10_IRQn
 #define LCD_R0_Pin GPIO_PIN_15
 #define LCD_R0_GPIO_Port GPIOI
 #define LCD_G4_Pin GPIO_PIN_11
@@ -227,9 +229,9 @@ void Error_Handler(void);
 #define LCD_G3_GPIO_Port GPIOJ
 #define FMC_SDCLK_Pin GPIO_PIN_8
 #define FMC_SDCLK_GPIO_Port GPIOG
-#define GAME_BUTTON1_Pin GPIO_PIN_6
-#define GAME_BUTTON1_GPIO_Port GPIOC
-#define GAME_BUTTON1_EXTI_IRQn EXTI9_5_IRQn
+#define GAME_BUTTON_2_Pin GPIO_PIN_6
+#define GAME_BUTTON_2_GPIO_Port GPIOC
+#define GAME_BUTTON_2_EXTI_IRQn EXTI9_5_IRQn
 #define FMC_A4_Pin GPIO_PIN_4
 #define FMC_A4_GPIO_Port GPIOF
 #define FMC_SDNME_Pin GPIO_PIN_5
