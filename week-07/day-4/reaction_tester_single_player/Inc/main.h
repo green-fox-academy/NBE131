@@ -76,8 +76,9 @@ void Error_Handler(void);
 #define ARDUINO_SCL_D15_GPIO_Port GPIOB
 #define ULPI_D7_Pin GPIO_PIN_5
 #define ULPI_D7_GPIO_Port GPIOB
-#define ARDUINO_PWM_D3_Pin GPIO_PIN_4
-#define ARDUINO_PWM_D3_GPIO_Port GPIOB
+#define STARTER_BUTTON_Pin GPIO_PIN_4
+#define STARTER_BUTTON_GPIO_Port GPIOB
+#define STARTER_BUTTON_EXTI_IRQn EXTI4_IRQn
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
 #define SPDIF_RX0_Pin GPIO_PIN_7
@@ -214,9 +215,6 @@ void Error_Handler(void);
 #define LCD_G4_GPIO_Port GPIOJ
 #define LCD_G5_Pin GPIO_PIN_0
 #define LCD_G5_GPIO_Port GPIOK
-#define STARTER_BUTTON_Pin GPIO_PIN_7
-#define STARTER_BUTTON_GPIO_Port GPIOC
-#define STARTER_BUTTON_EXTI_IRQn EXTI9_5_IRQn
 #define FMC_A3_Pin GPIO_PIN_3
 #define FMC_A3_GPIO_Port GPIOF
 #define LCD_CLK_Pin GPIO_PIN_14
@@ -248,8 +246,8 @@ void Error_Handler(void);
 #define ARDUINO_D2_GPIO_Port GPIOG
 #define RGB_LED1_G_Pin GPIO_PIN_7
 #define RGB_LED1_G_GPIO_Port GPIOF
-#define ARDUINO_A5_Pin GPIO_PIN_6
-#define ARDUINO_A5_GPIO_Port GPIOF
+#define RED_LED_Pin GPIO_PIN_6
+#define RED_LED_GPIO_Port GPIOF
 #define FMC_A5_Pin GPIO_PIN_5
 #define FMC_A5_GPIO_Port GPIOF
 #define NC2_Pin GPIO_PIN_2
@@ -262,8 +260,6 @@ void Error_Handler(void);
 #define ULPI_D6_GPIO_Port GPIOB
 #define FMC_D15_Pin GPIO_PIN_10
 #define FMC_D15_GPIO_Port GPIOD
-#define RED_LED_Pin GPIO_PIN_10
-#define RED_LED_GPIO_Port GPIOF
 #define RGB_LED1_R_Pin GPIO_PIN_9
 #define RGB_LED1_R_GPIO_Port GPIOF
 #define RGB_LED1_B_Pin GPIO_PIN_8

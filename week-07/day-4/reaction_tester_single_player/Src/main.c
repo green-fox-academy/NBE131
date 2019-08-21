@@ -24,7 +24,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-// #include "stm32746g_discovery.h"
+//#include "stm32746g_discovery.h"
  #include "../../../../STM32Cube/Repository/STM32Cube_FW_F7_V1.15.0/Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_lcd.h"
 
 /* USER CODE END Includes */
@@ -39,7 +39,7 @@ typedef enum game_state {
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define LCD_FRAME_BUFFER
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -168,15 +168,6 @@ int main(void)
 
   /* USER CODE BEGIN SysInit */
 
-  BSP_LCD_Init();
-  BSP_LCD_LayerDefaultInit(1, LCD_FB_START_ADDRESS);
-  BSP_LCD_SelectLayer(1);
-  //BSP_LCD_SetLayerVisible(1, 1);
-  BSP_LCD_SetFont(&LCD_DEFAULT_FONT);
-  BSP_LCD_SetBackColor(LCD_COLOR_BLUE);
-  BSP_LCD_SetTextColor(LCD_COLOR_YELLOW);
-  BSP_LCD_DisplayOn();
-  BSP_LCD_Clear(LCD_COLOR_BLACK);
 
 
 
@@ -208,6 +199,16 @@ int main(void)
   MX_RNG_Init();
   /* USER CODE BEGIN 2 */
  // BSP_LED_Init(LED_GREEN);
+
+  BSP_LCD_Init();
+  BSP_LCD_LayerDefaultInit(1, LCD_FB_START_ADDRESS);
+  BSP_LCD_SelectLayer(1);
+  //BSP_LCD_SetLayerVisible(1, 1);
+  BSP_LCD_SetFont(&LCD_DEFAULT_FONT);
+  BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
+  //BSP_LCD_SetTextColor(LCD_COLOR_YELLOW);
+  //BSP_LCD_DisplayOn();
+  BSP_LCD_Clear(LCD_COLOR_BLACK);
 
 
 
@@ -299,7 +300,7 @@ int main(void)
          valid_round_counter_1 = valid_round_counter_1 + 1;
          reaction_time_1_sum = reaction_time_1_sum + reaction_time_1;
 
-         char * result;
+         char  result[256];
          sprintf(result, "Reaction Time: %d ms.", reaction_time_1);
 
          BSP_LCD_DisplayStringAt(20, 20 + round_counter*20, result, LEFT_MODE);
@@ -463,7 +464,7 @@ static void MX_ADC3_Init(void)
   }
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
   */
-  sConfig.Channel = ADC_CHANNEL_4;
+  sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
@@ -990,7 +991,7 @@ static void MX_SAI2_Init(void)
   hsai_BlockB2.Init.MonoStereoMode = SAI_STEREOMODE;
   hsai_BlockB2.Init.CompandingMode = SAI_NOCOMPANDING;
   hsai_BlockB2.Init.TriState = SAI_OUTPUT_NOTRELEASED;
-  hsai_BlockB2.FrameInit.FrameLength = 8;
+  hsai_BlockB2.FrameInit.FrameLength = 24;
   hsai_BlockB2.FrameInit.ActiveFrameLength = 1;
   hsai_BlockB2.FrameInit.FSDefinition = SAI_FS_STARTFRAME;
   hsai_BlockB2.FrameInit.FSPolarity = SAI_FS_ACTIVE_LOW;
@@ -1260,7 +1261,6 @@ static void MX_TIM3_Init(void)
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
 
   /* USER CODE BEGIN TIM3_Init 1 */
 
@@ -1280,28 +1280,15 @@ static void MX_TIM3_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
-  {
-    Error_Handler();
-  }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
   }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN TIM3_Init 2 */
 
   /* USER CODE END TIM3_Init 2 */
-  HAL_TIM_MspPostInit(&htim3);
 
 }
 
@@ -1597,6 +1584,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF10_OTG_HS;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : STARTER_BUTTON_Pin */
+  GPIO_InitStruct.Pin = STARTER_BUTTON_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(STARTER_BUTTON_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : GAME_BUTTON_1_Pin */
   GPIO_InitStruct.Pin = GAME_BUTTON_1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
@@ -1661,12 +1654,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(LCD_INT_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : STARTER_BUTTON_Pin GAME_BUTTON_2_Pin */
-  GPIO_InitStruct.Pin = STARTER_BUTTON_Pin|GAME_BUTTON_2_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
   /*Configure GPIO pin : ULPI_NXT_Pin */
   GPIO_InitStruct.Pin = ULPI_NXT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -1674,6 +1661,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   GPIO_InitStruct.Alternate = GPIO_AF10_OTG_HS;
   HAL_GPIO_Init(ULPI_NXT_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : GAME_BUTTON_2_Pin */
+  GPIO_InitStruct.Pin = GAME_BUTTON_2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GAME_BUTTON_2_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : ARDUINO_D4_Pin ARDUINO_D2_Pin EXT_RST_Pin */
   GPIO_InitStruct.Pin = ARDUINO_D4_Pin|ARDUINO_D2_Pin|EXT_RST_Pin;
@@ -1712,6 +1705,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 1, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
