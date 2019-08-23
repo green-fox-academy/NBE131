@@ -73,6 +73,7 @@
 
 # CMake
 cmake-build-*/
+build/
 
 # Mongo Explorer plugin
 .idea/**/mongoSettings.xml
@@ -150,6 +151,7 @@ tmp/
 *~.nib
 local.properties
 .settings/
+Debug/
 .loadpath
 .recommenders
 
