@@ -32,7 +32,7 @@
 
 
 typedef enum move_direction {
-  UP, DOWN, LEFT, RIGHT, STOP
+  UP, DOWN, LEFT, RIGHT, STOP, OVER,
 } move_direction_t;
 
 
@@ -58,6 +58,7 @@ I2C_HandleTypeDef hi2c1;
 osThreadId defaultTaskHandle;
 osThreadId JoystickInputHaHandle;
 osThreadId snakeMoveTaskHandle;
+osThreadId displayTaskHandle;
 osMutexId directionChangeMutexHandle;
 /* USER CODE BEGIN PV */
 
@@ -67,8 +68,11 @@ uint8_t screen_content[] =
 };
 
 
-uint8_t x_snake = 2;
-uint8_t y_snake = 4;
+uint8_t x_snake = 0;
+uint8_t y_snake = 7;
+uint8_t x_food;
+uint8_t y_food;
+uint8_t score = 0;
 
 
 const uint8_t food[] =
@@ -107,6 +111,7 @@ static void MX_I2C1_Init(void);
 void StartDefaultTask(void const * argument);
 void StartJoystickInputHandlerTask(void const * argument);
 void StartSnakeMoveTask(void const * argument);
+void StartDisplayTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -219,6 +224,10 @@ int main(void)
   /* definition and creation of snakeMoveTask */
   osThreadDef(snakeMoveTask, StartSnakeMoveTask, osPriorityNormal, 0, 128);
   snakeMoveTaskHandle = osThreadCreate(osThread(snakeMoveTask), NULL);
+
+  /* definition and creation of displayTask */
+  osThreadDef(displayTask, StartDisplayTask, osPriorityNormal, 0, 128);
+  displayTaskHandle = osThreadCreate(osThread(displayTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -431,6 +440,7 @@ void StartDefaultTask(void const * argument)
     
     
     
+    
 
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
@@ -479,7 +489,7 @@ if (xJ < 1000) {
 }
 
 
-if (xJ >3000) {
+if (xJ > 3000) {
   direction = RIGHT;
   //osDelay(150);
 }
@@ -491,7 +501,7 @@ if (yJ < 1000) {
 }
 
 
-if (yJ >3000) {
+if (yJ > 3000) {
   direction = DOWN;
  // osDelay(150);
 }
@@ -519,56 +529,97 @@ void StartSnakeMoveTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    /*for (int i = 0; i <= 8; i++) {
-
-      if (i>0) {
-      dot_snake[i-1] = 0x00;
-      }
-
-      if (i<8) {
-      dot_snake[i] = 0x08;
-      }*/
 
     switch (direction) {
     case UP:
       y_snake = y_snake + 1;
-      /*if(y_snake = 8){
-        direction = STOP;
-      }*/
+      if(y_snake == 8){
+            direction = OVER;
+          }
       break;
 
     case DOWN:
       y_snake = y_snake - 1;
+      if(y_snake == 255){
+            direction = OVER;
+          }
       break;
 
     case LEFT:
       x_snake = x_snake - 1;
+      if(x_snake == 255){
+               direction = OVER;
+             }
       break;
 
     case RIGHT:
       x_snake = x_snake + 1;
 
-     /* if(x_snake = 8){
-            direction = STOP;
-          }*/
+     if(x_snake == 8){
+            direction = OVER;
+     }
       break;
     }
+    osDelay(400);
 
-   for (int i = 0; i<8; i++)
-   {
-     screen_content[i] = 0x00;
-   }
-
-    screen_content [x_snake] |= (0b1 << y_snake);
-
-      set_led_matrix(screen_content);
-
-      osDelay(400);
     }
 
 
 
   /* USER CODE END StartSnakeMoveTask */
+}
+
+/* USER CODE BEGIN Header_StartDisplayTask */
+/**
+* @brief Function implementing the displayTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartDisplayTask */
+void StartDisplayTask(void const * argument)
+{
+  /* USER CODE BEGIN StartDisplayTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    if (direction == UP || direction == DOWN || direction == LEFT || direction == RIGHT) {
+    for (int i = 0; i<8; i++)
+      {
+        screen_content[i] = 0x00;
+      }
+
+       screen_content [x_snake] |= (0b1 << y_snake);
+
+         set_led_matrix(screen_content);
+
+         osDelay(40);
+    }
+
+    if(direction == OVER) {
+      for (int i= 0; i<3; i++){
+
+
+      set_led_matrix(visconti_snake);
+      osDelay (400);
+
+
+      set_led_matrix(visconti_snake2);
+      osDelay (400);
+      }
+
+      clear_led_matrix();
+      x_snake = 2;
+      y_snake = 4;
+
+      direction = STOP;
+
+
+
+    }
+    }
+
+
+  /* USER CODE END StartDisplayTask */
 }
 
 /**
