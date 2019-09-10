@@ -25,6 +25,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "linked_list.h"
+
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -34,6 +37,8 @@
 typedef enum move_direction {
   UP, DOWN, LEFT, RIGHT, STOP, OVER,
 } move_direction_t;
+
+
 
 
 /* USER CODE END PTD */
@@ -69,16 +74,10 @@ uint8_t screen_content[] =
 
 
 uint8_t x_snake = 0;
-uint8_t y_snake = 7;
+uint8_t y_snake = 5;
 uint8_t x_food;
 uint8_t y_food;
 uint8_t score = 0;
-
-
-const uint8_t food[] =
-{
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00
-};
 
 
 const uint8_t visconti_snake[] =
@@ -96,9 +95,17 @@ const uint8_t visconti_snake2[] =
 int xJ = 0;
 int yJ = 0;
 
+coord_t def_coord1 = {0,5};
+coord_t def_coord2 = {0,6};
+coord_t def_coord3 = {0,7};
+
+
 HAL_StatusTypeDef Status;
 
 move_direction_t direction = STOP;
+
+node_t *head;
+node_t **headptr = &head;
 
 
 /* USER CODE END PV */
@@ -188,6 +195,13 @@ int main(void)
 
      HAL_I2C_Master_Transmit(&hi2c1, I2C_ADDRESS_LEDMATRIX, &init1, 1, 100);
      HAL_I2C_Master_Transmit(&hi2c1, I2C_ADDRESS_LEDMATRIX, &init2, 1, 100);
+
+
+      init_list(headptr);
+      push_back(headptr, def_coord1);
+      push_back(headptr, def_coord2);
+      push_back(headptr, def_coord3);
+
 
   /* USER CODE END 2 */
 
@@ -560,6 +574,13 @@ void StartSnakeMoveTask(void const * argument)
      }
       break;
     }
+
+
+    pop_back(head);
+    coord_t new_head = {x_snake, y_snake};
+    push_front(headptr, new_head);
+
+
     osDelay(400);
 
     }
@@ -588,8 +609,15 @@ void StartDisplayTask(void const * argument)
         screen_content[i] = 0x00;
       }
 
-       screen_content [x_snake] |= (0b1 << y_snake);
+    node_t* p = head;
 
+    for (int i = 0; i < size(head); i++){
+
+
+      screen_content [p->data.snake_x] |= (0b1 << p->data.snake_y);
+
+      p = p->next;
+    }
          set_led_matrix(screen_content);
 
          osDelay(40);
@@ -608,8 +636,8 @@ void StartDisplayTask(void const * argument)
       }
 
       clear_led_matrix();
-      x_snake = 2;
-      y_snake = 4;
+      x_snake = 0;
+      y_snake = 5;
 
       direction = STOP;
 
