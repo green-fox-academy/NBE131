@@ -30,6 +30,12 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
+
+typedef enum move_direction {
+  UP, DOWN, LEFT, RIGHT, STOP
+} move_direction_t;
+
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -55,15 +61,19 @@ osThreadId snakeMoveTaskHandle;
 osMutexId directionChangeMutexHandle;
 /* USER CODE BEGIN PV */
 
-uint8_t dot_snake[] =
+uint8_t screen_content[] =
 {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 
+uint8_t x_snake = 2;
+uint8_t y_snake = 4;
+
+
 const uint8_t food[] =
 {
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00
 };
 
 
@@ -83,6 +93,9 @@ int xJ = 0;
 int yJ = 0;
 
 HAL_StatusTypeDef Status;
+
+move_direction_t direction = STOP;
+
 
 /* USER CODE END PV */
 
@@ -460,7 +473,30 @@ void StartJoystickInputHandlerTask(void const * argument)
 
                           yJ = HAL_ADC_GetValue(&hadc3);
                         }
+if (xJ < 1000) {
+  direction = LEFT;
+//osDelay(150);
+}
 
+
+if (xJ >3000) {
+  direction = RIGHT;
+  //osDelay(150);
+}
+
+
+if (yJ < 1000) {
+  direction = UP;
+  //osDelay(150);
+}
+
+
+if (yJ >3000) {
+  direction = DOWN;
+ // osDelay(150);
+}
+
+osDelay(150);
 
 
   }
@@ -483,7 +519,7 @@ void StartSnakeMoveTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    for (int i = 0; i <= 8; i++) {
+    /*for (int i = 0; i <= 8; i++) {
 
       if (i>0) {
       dot_snake[i-1] = 0x00;
@@ -491,15 +527,47 @@ void StartSnakeMoveTask(void const * argument)
 
       if (i<8) {
       dot_snake[i] = 0x08;
-      }
+      }*/
 
-      set_led_matrix(dot_snake);
+    switch (direction) {
+    case UP:
+      y_snake = y_snake + 1;
+      /*if(y_snake = 8){
+        direction = STOP;
+      }*/
+      break;
+
+    case DOWN:
+      y_snake = y_snake - 1;
+      break;
+
+    case LEFT:
+      x_snake = x_snake - 1;
+      break;
+
+    case RIGHT:
+      x_snake = x_snake + 1;
+
+     /* if(x_snake = 8){
+            direction = STOP;
+          }*/
+      break;
+    }
+
+   for (int i = 0; i<8; i++)
+   {
+     screen_content[i] = 0x00;
+   }
+
+    screen_content [x_snake] |= (0b1 << y_snake);
+
+      set_led_matrix(screen_content);
 
       osDelay(400);
     }
 
 
-  }
+
   /* USER CODE END StartSnakeMoveTask */
 }
 
