@@ -38,6 +38,8 @@ int search ( node_t* head, coord_t value);
 
 coord_t pop_back(node_t* head);
 
+void deallocate (node_t ** head);
+
 #endif //LINKED_LIST_LINKED_LIST_H
 
 

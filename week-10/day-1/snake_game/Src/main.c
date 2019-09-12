@@ -39,7 +39,7 @@ typedef enum move_direction {
 typedef struct food_coord {
   uint8_t x_food;
   uint8_t y_food;
-}food_coord_t;
+} food_coord_t;
 
 /* USER CODE END PTD */
 
@@ -67,7 +67,7 @@ osThreadId JoystickInputHaHandle;
 osThreadId snakeMoveTaskHandle;
 osThreadId displayTaskHandle;
 osThreadId foodScoreTaskHandle;
-osMutexId directionChangeMutexHandle;
+osMutexId linkedListHandleMutexHandle;
 /* USER CODE BEGIN PV */
 
 uint8_t screen_content[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
@@ -76,10 +76,11 @@ uint8_t x_snake = 0;
 uint8_t y_snake = 5;
 //uint8_t x_food;
 //uint8_t y_food;
-food_coord_t coord_food;
-uint32_t score = 0;
-uint32_t game_speed = 400;
+
+int score = -5;
+uint32_t game_speed = 500;
 uint8_t food_eaten = 1;
+uint32_t food_counter = 0;
 
 const uint8_t visconti_snake[] = { 0x00, 0xa0, 0x48, 0xd4, 0xd5, 0xd2, 0x20,
     0x00 };
@@ -90,6 +91,8 @@ const uint8_t visconti_snake2[] = { 0xa0, 0x40, 0x48, 0xd4, 0xd5, 0xd2, 0x20,
 coord_t def_coord1 = { 0, 5 };
 coord_t def_coord2 = { 0, 6 };
 coord_t def_coord3 = { 0, 7 };
+coord_t prev_tail;
+food_coord_t coord_food;
 
 HAL_StatusTypeDef Status;
 
@@ -146,15 +149,13 @@ void set_led_matrix(const uint8_t* data) {
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
+ * @brief  The application entry point.
+ * @retval int
+ */
+int main(void) {
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
-  
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -187,16 +188,14 @@ int main(void)
   HAL_I2C_Master_Transmit(&hi2c1, I2C_ADDRESS_LEDMATRIX, &init2, 1, 100);
 
   init_list(headptr);
-  /*push_back(headptr, def_coord1);
-   push_back(headptr, def_coord2);
-   push_back(headptr, def_coord3);*/
+
 
   /* USER CODE END 2 */
 
   /* Create the mutex(es) */
-  /* definition and creation of directionChangeMutex */
-  osMutexDef(directionChangeMutex);
-  directionChangeMutexHandle = osMutexCreate(osMutex(directionChangeMutex));
+  /* definition and creation of linkedListHandleMutex */
+  osMutexDef(linkedListHandleMutex);
+  linkedListHandleMutexHandle = osMutexCreate(osMutex(linkedListHandleMutex));
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -220,7 +219,8 @@ int main(void)
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of JoystickInputHa */
-  osThreadDef(JoystickInputHa, StartJoystickInputHandlerTask, osPriorityNormal, 0, 128);
+  osThreadDef(JoystickInputHa, StartJoystickInputHandlerTask, osPriorityNormal,
+      0, 128);
   JoystickInputHaHandle = osThreadCreate(osThread(JoystickInputHa), NULL);
 
   /* definition and creation of snakeMoveTask */
@@ -241,7 +241,7 @@ int main(void)
 
   /* Start scheduler */
   osKernelStart();
-  
+
   /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
@@ -256,21 +256,21 @@ int main(void)
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
-void SystemClock_Config(void)
-{
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+ * @brief System Clock Configuration
+ * @retval None
+ */
+void SystemClock_Config(void) {
+  RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = { 0 };
 
   /** Configure the main internal regulator output voltage 
-  */
-  __HAL_RCC_PWR_CLK_ENABLE();
+   */
+  __HAL_RCC_PWR_CLK_ENABLE()
+  ;
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
   /** Initializes the CPU, AHB and APB busses clocks 
-  */
+   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
@@ -280,57 +280,53 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLN = 50;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 3;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
     Error_Handler();
   }
   /** Activate the Over-Drive mode 
-  */
-  if (HAL_PWREx_EnableOverDrive() != HAL_OK)
-  {
+   */
+  if (HAL_PWREx_EnableOverDrive() != HAL_OK) {
     Error_Handler();
   }
   /** Initializes the CPU, AHB and APB busses clocks 
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+   */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+      | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
-  {
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK) {
     Error_Handler();
   }
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_CLK48;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_I2C1
+      | RCC_PERIPHCLK_CLK48;
   PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
   PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLL;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
-  {
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
     Error_Handler();
   }
 }
 
 /**
-  * @brief ADC3 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_ADC3_Init(void)
-{
+ * @brief ADC3 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_ADC3_Init(void) {
 
   /* USER CODE BEGIN ADC3_Init 0 */
 
   /* USER CODE END ADC3_Init 0 */
 
-  ADC_ChannelConfTypeDef sConfig = {0};
+  ADC_ChannelConfTypeDef sConfig = { 0 };
 
   /* USER CODE BEGIN ADC3_Init 1 */
 
   /* USER CODE END ADC3_Init 1 */
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
-  */
+   */
   hadc3.Instance = ADC3;
   hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
   hadc3.Init.Resolution = ADC_RESOLUTION_12B;
@@ -344,25 +340,22 @@ static void MX_ADC3_Init(void)
   hadc3.Init.NbrOfConversion = 2;
   hadc3.Init.DMAContinuousRequests = DISABLE;
   hadc3.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-  if (HAL_ADC_Init(&hadc3) != HAL_OK)
-  {
+  if (HAL_ADC_Init(&hadc3) != HAL_OK) {
     Error_Handler();
   }
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
-  */
+   */
   sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;
-  if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
-  {
+  if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK) {
     Error_Handler();
   }
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
-  */
+   */
   sConfig.Channel = ADC_CHANNEL_8;
   sConfig.Rank = ADC_REGULAR_RANK_2;
-  if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
-  {
+  if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK) {
     Error_Handler();
   }
   /* USER CODE BEGIN ADC3_Init 2 */
@@ -372,12 +365,11 @@ static void MX_ADC3_Init(void)
 }
 
 /**
-  * @brief I2C1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_I2C1_Init(void)
-{
+ * @brief I2C1 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_I2C1_Init(void) {
 
   /* USER CODE BEGIN I2C1_Init 0 */
 
@@ -395,20 +387,17 @@ static void MX_I2C1_Init(void)
   hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
   hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
   hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
-  {
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK) {
     Error_Handler();
   }
   /** Configure Analogue filter 
-  */
-  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
-  {
+   */
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK) {
     Error_Handler();
   }
   /** Configure Digital filter 
-  */
-  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
-  {
+   */
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK) {
     Error_Handler();
   }
   /* USER CODE BEGIN I2C1_Init 2 */
@@ -418,12 +407,11 @@ static void MX_I2C1_Init(void)
 }
 
 /**
-  * @brief RNG Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_RNG_Init(void)
-{
+ * @brief RNG Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_RNG_Init(void) {
 
   /* USER CODE BEGIN RNG_Init 0 */
 
@@ -433,8 +421,7 @@ static void MX_RNG_Init(void)
 
   /* USER CODE END RNG_Init 1 */
   hrng.Instance = RNG;
-  if (HAL_RNG_Init(&hrng) != HAL_OK)
-  {
+  if (HAL_RNG_Init(&hrng) != HAL_OK) {
     Error_Handler();
   }
   /* USER CODE BEGIN RNG_Init 2 */
@@ -444,19 +431,23 @@ static void MX_RNG_Init(void)
 }
 
 /**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_GPIO_Init(void)
-{
+ * @brief GPIO Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_GPIO_Init(void) {
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOF_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE()
+  ;
+  __HAL_RCC_GPIOA_CLK_ENABLE()
+  ;
+  __HAL_RCC_GPIOC_CLK_ENABLE()
+  ;
+  __HAL_RCC_GPIOH_CLK_ENABLE()
+  ;
+  __HAL_RCC_GPIOF_CLK_ENABLE()
+  ;
 
 }
 
@@ -471,15 +462,7 @@ static void MX_GPIO_Init(void)
  * @retval None
  */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const * argument)
-{
-    
-    
-    
-    
-    
-    
-    
+void StartDefaultTask(void const * argument) {
 
   /* USER CODE BEGIN 5 */
   push_back(headptr, def_coord1);
@@ -490,7 +473,7 @@ void StartDefaultTask(void const * argument)
   for (;;) {
     osDelay(1);
   }
-  /* USER CODE END 5 */ 
+  /* USER CODE END 5 */
 }
 
 /* USER CODE BEGIN Header_StartJoystickInputHandlerTask */
@@ -500,8 +483,7 @@ void StartDefaultTask(void const * argument)
  * @retval None
  */
 /* USER CODE END Header_StartJoystickInputHandlerTask */
-void StartJoystickInputHandlerTask(void const * argument)
-{
+void StartJoystickInputHandlerTask(void const * argument) {
   /* USER CODE BEGIN StartJoystickInputHandlerTask */
 
   int xJ = 0;
@@ -562,8 +544,7 @@ void StartJoystickInputHandlerTask(void const * argument)
  */
 
 /* USER CODE END Header_StartSnakeMoveTask */
-void StartSnakeMoveTask(void const * argument)
-{
+void StartSnakeMoveTask(void const * argument) {
   /* USER CODE BEGIN StartSnakeMoveTask */
   /* Infinite loop */
   for (;;) {
@@ -602,12 +583,27 @@ void StartSnakeMoveTask(void const * argument)
       break;
     }
 
-    pop_back(head);
     coord_t new_head = { x_snake, y_snake };
-    push_front(headptr, new_head);
 
-    if(new_head.snake_x == coord_food.x_food && new_head.snake_y == coord_food.y_food) {
+    if (new_head.snake_x == coord_food.x_food
+        && new_head.snake_y == coord_food.y_food) {
+
+      osMutexWait(linkedListHandleMutexHandle, osWaitForever);
+
+      push_front(headptr, new_head);
+
+      osMutexRelease(linkedListHandleMutexHandle);
+
       food_eaten = 1;
+
+    } else {
+
+      osMutexWait(linkedListHandleMutexHandle, osWaitForever);
+
+      prev_tail = pop_back(head);
+      push_front(headptr, new_head);
+
+      osMutexRelease(linkedListHandleMutexHandle);
     }
 
     osDelay(game_speed);
@@ -624,8 +620,7 @@ void StartSnakeMoveTask(void const * argument)
  * @retval None
  */
 /* USER CODE END Header_StartDisplayTask */
-void StartDisplayTask(void const * argument)
-{
+void StartDisplayTask(void const * argument) {
   /* USER CODE BEGIN StartDisplayTask */
   /* Infinite loop */
   for (;;) {
@@ -637,21 +632,24 @@ void StartDisplayTask(void const * argument)
 
       node_t* p = head;
 
-      for (int i = 0; i < size(head); i++) {
+      osMutexWait(linkedListHandleMutexHandle, osWaitForever);
+      int lenght = size(head);
+
+      for (int i = 0; i < lenght; i++) {
 
         screen_content[p->data.snake_x] |= (0b1 << p->data.snake_y);
 
         p = p->next;
       }
+      osMutexRelease(linkedListHandleMutexHandle);
 
-      if (HAL_GetTick() % (game_speed /3) < (game_speed /6))
-      {
+      if (HAL_GetTick() % (game_speed / 3) < (game_speed / 6)) {
         screen_content[coord_food.x_food] |= (0b1 << coord_food.y_food);
       }
 
       set_led_matrix(screen_content);
 
-      osDelay(game_speed /10);
+      osDelay(game_speed / 10);
     }
 
     if (direction == OVER) {
@@ -668,6 +666,17 @@ void StartDisplayTask(void const * argument)
       x_snake = 0;
       y_snake = 5;
 
+      score = -5;
+      game_speed = 500;
+      food_eaten = 1;
+      food_counter = 0;
+
+      deallocate (headptr);
+
+      push_back(headptr, def_coord1);
+      push_back(headptr, def_coord2);
+      push_back(headptr, def_coord3);
+
       direction = STOP;
 
     }
@@ -678,61 +687,57 @@ void StartDisplayTask(void const * argument)
 
 /* USER CODE BEGIN Header_StartFoodScoreTask */
 /**
-* @brief Function implementing the foodScoreTask thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the foodScoreTask thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartFoodScoreTask */
-void StartFoodScoreTask(void const * argument)
-{
-
-
-
+void StartFoodScoreTask(void const * argument) {
   /* USER CODE BEGIN StartFoodScoreTask */
 
   /* Infinite loop */
-  for(;;)
-  {
-    if (food_eaten){
+  for (;;) {
+    if (food_eaten) {
       coord_t temp;
+      int is_in_snake = 1;
 
-        do {
-          coord_food.x_food = (HAL_RNG_GetRandomNumber(&hrng)) % 7;
-      osDelay(1);
-      coord_food.y_food = (HAL_RNG_GetRandomNumber(&hrng)) % 7;
-      osDelay(1);
+      do {
+        coord_food.x_food = (HAL_RNG_GetRandomNumber(&hrng)) % 7;
+        osDelay(1);
+        coord_food.y_food = (HAL_RNG_GetRandomNumber(&hrng)) % 7;
+        osDelay(1);
 
+        temp.snake_x = coord_food.x_food;
+        temp.snake_y = coord_food.y_food;
 
-      temp.snake_x = coord_food.x_food;
-      temp.snake_y = coord_food.y_food;
+        osMutexWait(linkedListHandleMutexHandle, osWaitForever);
+        is_in_snake = search(head, temp);
+        osMutexRelease(linkedListHandleMutexHandle);
 
-        }
-        while
-          (search(head, temp));
+      } while (is_in_snake);
 
-        score +=5;
-        food_eaten = 0;
-      }
+      score += 2500 / game_speed;
 
-      //x_food = 3;
-      //y_food = 4;
+      food_eaten = 0;
 
+      food_counter++;
 
+      game_speed = 500 - 50 * (food_counter / 5);
+    }
 
   }
   /* USER CODE END StartFoodScoreTask */
 }
 
 /**
-  * @brief  Period elapsed callback in non blocking mode
-  * @note   This function is called  when TIM14 interrupt took place, inside
-  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
-  * a global variable "uwTick" used as application time base.
-  * @param  htim : TIM handle
-  * @retval None
-  */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
+ * @brief  Period elapsed callback in non blocking mode
+ * @note   This function is called  when TIM14 interrupt took place, inside
+ * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+ * a global variable "uwTick" used as application time base.
+ * @param  htim : TIM handle
+ * @retval None
+ */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   /* USER CODE BEGIN Callback 0 */
 
   /* USER CODE END Callback 0 */
@@ -745,11 +750,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 }
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
+void Error_Handler(void) {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
 
