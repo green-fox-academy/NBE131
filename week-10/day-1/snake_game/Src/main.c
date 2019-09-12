@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+ * All rights reserved.</center></h2>
+ *
+ * This software component is licensed by ST under BSD 3-Clause license,
+ * the "License"; You may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at:
+ *                        opensource.org/licenses/BSD-3-Clause
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -27,19 +27,19 @@
 
 #include "linked_list.h"
 
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
-
 typedef enum move_direction {
   UP, DOWN, LEFT, RIGHT, STOP, OVER,
 } move_direction_t;
 
-
-
+typedef struct food_coord {
+  uint8_t x_food;
+  uint8_t y_food;
+}food_coord_t;
 
 /* USER CODE END PTD */
 
@@ -60,45 +60,36 @@ ADC_HandleTypeDef hadc3;
 
 I2C_HandleTypeDef hi2c1;
 
+RNG_HandleTypeDef hrng;
+
 osThreadId defaultTaskHandle;
 osThreadId JoystickInputHaHandle;
 osThreadId snakeMoveTaskHandle;
 osThreadId displayTaskHandle;
+osThreadId foodScoreTaskHandle;
 osMutexId directionChangeMutexHandle;
 /* USER CODE BEGIN PV */
 
-uint8_t screen_content[] =
-{
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-
+uint8_t screen_content[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
 uint8_t x_snake = 0;
 uint8_t y_snake = 5;
-uint8_t x_food;
-uint8_t y_food;
-uint8_t score = 0;
+//uint8_t x_food;
+//uint8_t y_food;
+food_coord_t coord_food;
+uint32_t score = 0;
+uint32_t game_speed = 400;
+uint8_t food_eaten = 1;
 
+const uint8_t visconti_snake[] = { 0x00, 0xa0, 0x48, 0xd4, 0xd5, 0xd2, 0x20,
+    0x00 };
 
-const uint8_t visconti_snake[] =
-{
-    0x00, 0xa0, 0x48, 0xd4, 0xd5, 0xd2, 0x20, 0x00
-};
+const uint8_t visconti_snake2[] = { 0xa0, 0x40, 0x48, 0xd4, 0xd5, 0xd2, 0x20,
+    0x00 };
 
-
-const uint8_t visconti_snake2[] =
-{
-    0xa0, 0x40, 0x48, 0xd4, 0xd5, 0xd2, 0x20, 0x00
-};
-
-
-int xJ = 0;
-int yJ = 0;
-
-coord_t def_coord1 = {0,5};
-coord_t def_coord2 = {0,6};
-coord_t def_coord3 = {0,7};
-
+coord_t def_coord1 = { 0, 5 };
+coord_t def_coord2 = { 0, 6 };
+coord_t def_coord3 = { 0, 7 };
 
 HAL_StatusTypeDef Status;
 
@@ -107,7 +98,6 @@ move_direction_t direction = STOP;
 node_t *head;
 node_t **headptr = &head;
 
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -115,10 +105,12 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC3_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_RNG_Init(void);
 void StartDefaultTask(void const * argument);
 void StartJoystickInputHandlerTask(void const * argument);
 void StartSnakeMoveTask(void const * argument);
 void StartDisplayTask(void const * argument);
+void StartFoodScoreTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -130,27 +122,24 @@ void set_led_matrix(const uint8_t* data);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-void clear_led_matrix(){
+void clear_led_matrix() {
   uint8_t buff[2];
 
-  for(int i=0; i<16; i++)
-  {
+  for (int i = 0; i < 16; i++) {
     buff[0] = i;
     buff[1] = 0x00;
     HAL_I2C_Master_Transmit(&hi2c1, I2C_ADDRESS_LEDMATRIX, buff, 2, 100);
   }
 }
 
-
-void set_led_matrix(const uint8_t* data){
+void set_led_matrix(const uint8_t* data) {
   clear_led_matrix();
   uint8_t buff[2];
 
-  for(int i=0; i<8; i++)
-  {
-      buff[0] = i*2;
-      buff[1] = (data[i] >> 1) | (data[i] << 7);
-      HAL_I2C_Master_Transmit(&hi2c1, I2C_ADDRESS_LEDMATRIX, buff, 2, 100);
+  for (int i = 0; i < 8; i++) {
+    buff[0] = i * 2;
+    buff[1] = (data[i] >> 1) | (data[i] << 7);
+    HAL_I2C_Master_Transmit(&hi2c1, I2C_ADDRESS_LEDMATRIX, buff, 2, 100);
   }
 }
 
@@ -187,21 +176,20 @@ int main(void)
   MX_GPIO_Init();
   MX_ADC3_Init();
   MX_I2C1_Init();
+  MX_RNG_Init();
   /* USER CODE BEGIN 2 */
 
   //init LED matrix
-     uint8_t init1 = 0b00100001;
-     uint8_t init2 = 0b10000001;
+  uint8_t init1 = 0b00100001;
+  uint8_t init2 = 0b10000001;
 
-     HAL_I2C_Master_Transmit(&hi2c1, I2C_ADDRESS_LEDMATRIX, &init1, 1, 100);
-     HAL_I2C_Master_Transmit(&hi2c1, I2C_ADDRESS_LEDMATRIX, &init2, 1, 100);
+  HAL_I2C_Master_Transmit(&hi2c1, I2C_ADDRESS_LEDMATRIX, &init1, 1, 100);
+  HAL_I2C_Master_Transmit(&hi2c1, I2C_ADDRESS_LEDMATRIX, &init2, 1, 100);
 
-
-      init_list(headptr);
-      push_back(headptr, def_coord1);
-      push_back(headptr, def_coord2);
-      push_back(headptr, def_coord3);
-
+  init_list(headptr);
+  /*push_back(headptr, def_coord1);
+   push_back(headptr, def_coord2);
+   push_back(headptr, def_coord3);*/
 
   /* USER CODE END 2 */
 
@@ -243,6 +231,10 @@ int main(void)
   osThreadDef(displayTask, StartDisplayTask, osPriorityNormal, 0, 128);
   displayTaskHandle = osThreadCreate(osThread(displayTask), NULL);
 
+  /* definition and creation of foodScoreTask */
+  osThreadDef(foodScoreTask, StartFoodScoreTask, osPriorityNormal, 0, 128);
+  foodScoreTaskHandle = osThreadCreate(osThread(foodScoreTask), NULL);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -254,8 +246,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+  while (1) {
 
     /* USER CODE END WHILE */
 
@@ -277,7 +268,7 @@ void SystemClock_Config(void)
   /** Configure the main internal regulator output voltage 
   */
   __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
   /** Initializes the CPU, AHB and APB busses clocks 
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
@@ -285,11 +276,17 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 10;
-  RCC_OscInitStruct.PLL.PLLN = 210;
+  RCC_OscInitStruct.PLL.PLLM = 8;
+  RCC_OscInitStruct.PLL.PLLN = 50;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 2;
+  RCC_OscInitStruct.PLL.PLLQ = 3;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Activate the Over-Drive mode 
+  */
+  if (HAL_PWREx_EnableOverDrive() != HAL_OK)
   {
     Error_Handler();
   }
@@ -299,15 +296,16 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
   {
     Error_Handler();
   }
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_I2C1;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_CLK48;
   PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
+  PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLL;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -334,7 +332,7 @@ static void MX_ADC3_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
   */
   hadc3.Instance = ADC3;
-  hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
   hadc3.Init.Resolution = ADC_RESOLUTION_12B;
   hadc3.Init.ScanConvMode = ADC_SCAN_ENABLE;
   hadc3.Init.ContinuousConvMode = DISABLE;
@@ -389,7 +387,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x00A0A3F7;
+  hi2c1.Init.Timing = 0x00C0EAFF;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -420,6 +418,32 @@ static void MX_I2C1_Init(void)
 }
 
 /**
+  * @brief RNG Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_RNG_Init(void)
+{
+
+  /* USER CODE BEGIN RNG_Init 0 */
+
+  /* USER CODE END RNG_Init 0 */
+
+  /* USER CODE BEGIN RNG_Init 1 */
+
+  /* USER CODE END RNG_Init 1 */
+  hrng.Instance = RNG;
+  if (HAL_RNG_Init(&hrng) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN RNG_Init 2 */
+
+  /* USER CODE END RNG_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -442,10 +466,10 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN Header_StartDefaultTask */
 /**
-  * @brief  Function implementing the defaultTask thread.
-  * @param  argument: Not used 
-  * @retval None
-  */
+ * @brief  Function implementing the defaultTask thread.
+ * @param  argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument)
 {
@@ -455,11 +479,15 @@ void StartDefaultTask(void const * argument)
     
     
     
+    
 
   /* USER CODE BEGIN 5 */
+  push_back(headptr, def_coord1);
+  push_back(headptr, def_coord2);
+  push_back(headptr, def_coord3);
+
   /* Infinite loop */
-  for(;;)
-  {
+  for (;;) {
     osDelay(1);
   }
   /* USER CODE END 5 */ 
@@ -467,61 +495,60 @@ void StartDefaultTask(void const * argument)
 
 /* USER CODE BEGIN Header_StartJoystickInputHandlerTask */
 /**
-* @brief Function implementing the JoystickInputHa thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the JoystickInputHa thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartJoystickInputHandlerTask */
 void StartJoystickInputHandlerTask(void const * argument)
 {
   /* USER CODE BEGIN StartJoystickInputHandlerTask */
+
+  int xJ = 0;
+  int yJ = 0;
+
   /* Infinite loop */
-  for(;;)
-  {
+  for (;;) {
     HAL_ADC_Start(&hadc3);
 
-   // osDelay(1);
+    // osDelay(1);
 
-                        if (HAL_ADC_PollForConversion(&hadc3, 100) == HAL_OK) {
+    if (HAL_ADC_PollForConversion(&hadc3, 100) == HAL_OK) {
 
-                          xJ = HAL_ADC_GetValue(&hadc3);
-                        }
+      xJ = HAL_ADC_GetValue(&hadc3);
+    }
 
-                        HAL_ADC_Start(&hadc3);
+    HAL_ADC_Start(&hadc3);
 
-                     //   osDelay(1);
+    //   osDelay(1);
 
-                        Status = HAL_ADC_PollForConversion(&hadc3, 100);
+    Status = HAL_ADC_PollForConversion(&hadc3, 100);
 
-                        if (Status == HAL_OK) {
+    if (Status == HAL_OK) {
 
-                          yJ = HAL_ADC_GetValue(&hadc3);
-                        }
-if (xJ < 1000) {
-  direction = LEFT;
+      yJ = HAL_ADC_GetValue(&hadc3);
+    }
+    if (xJ < 1000) {
+      direction = LEFT;
 //osDelay(150);
-}
+    }
 
+    if (xJ > 3000) {
+      direction = RIGHT;
+      //osDelay(150);
+    }
 
-if (xJ > 3000) {
-  direction = RIGHT;
-  //osDelay(150);
-}
+    if (yJ < 1000) {
+      direction = UP;
+      //osDelay(150);
+    }
 
+    if (yJ > 3000) {
+      direction = DOWN;
+      // osDelay(150);
+    }
 
-if (yJ < 1000) {
-  direction = UP;
-  //osDelay(150);
-}
-
-
-if (yJ > 3000) {
-  direction = DOWN;
- // osDelay(150);
-}
-
-osDelay(150);
-
+    osDelay(game_speed / 3);
 
   }
   /* USER CODE END StartJoystickInputHandlerTask */
@@ -529,110 +556,112 @@ osDelay(150);
 
 /* USER CODE BEGIN Header_StartSnakeMoveTask */
 /**
-* @brief Function implementing the snakeMoveTask thread.
-* @param argument: Not used
-* @retval None
-*/
-
-
+ * @brief Function implementing the snakeMoveTask thread.
+ * @param argument: Not used
+ * @retval None
+ */
 
 /* USER CODE END Header_StartSnakeMoveTask */
 void StartSnakeMoveTask(void const * argument)
 {
   /* USER CODE BEGIN StartSnakeMoveTask */
   /* Infinite loop */
-  for(;;)
-  {
+  for (;;) {
 
     switch (direction) {
     case UP:
       y_snake = y_snake + 1;
-      if(y_snake == 8){
-            direction = OVER;
-          }
+      if (y_snake == 8) {
+        direction = OVER;
+      }
       break;
 
     case DOWN:
       y_snake = y_snake - 1;
-      if(y_snake == 255){
-            direction = OVER;
-          }
+      if (y_snake == 255) {
+        direction = OVER;
+      }
       break;
 
     case LEFT:
       x_snake = x_snake - 1;
-      if(x_snake == 255){
-               direction = OVER;
-             }
+      if (x_snake == 255) {
+        direction = OVER;
+      }
       break;
 
     case RIGHT:
       x_snake = x_snake + 1;
 
-     if(x_snake == 8){
-            direction = OVER;
-     }
+      if (x_snake == 8) {
+        direction = OVER;
+      }
+      break;
+
+    default:
       break;
     }
 
-
     pop_back(head);
-    coord_t new_head = {x_snake, y_snake};
+    coord_t new_head = { x_snake, y_snake };
     push_front(headptr, new_head);
 
-
-    osDelay(400);
-
+    if(new_head.snake_x == coord_food.x_food && new_head.snake_y == coord_food.y_food) {
+      food_eaten = 1;
     }
 
+    osDelay(game_speed);
 
+  }
 
   /* USER CODE END StartSnakeMoveTask */
 }
 
 /* USER CODE BEGIN Header_StartDisplayTask */
 /**
-* @brief Function implementing the displayTask thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the displayTask thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartDisplayTask */
 void StartDisplayTask(void const * argument)
 {
   /* USER CODE BEGIN StartDisplayTask */
   /* Infinite loop */
-  for(;;)
-  {
-    if (direction == UP || direction == DOWN || direction == LEFT || direction == RIGHT) {
-    for (int i = 0; i<8; i++)
-      {
+  for (;;) {
+    if (direction == UP || direction == DOWN || direction == LEFT
+        || direction == RIGHT) {
+      for (int i = 0; i < 8; i++) {
         screen_content[i] = 0x00;
       }
 
-    node_t* p = head;
+      node_t* p = head;
 
-    for (int i = 0; i < size(head); i++){
+      for (int i = 0; i < size(head); i++) {
 
+        screen_content[p->data.snake_x] |= (0b1 << p->data.snake_y);
 
-      screen_content [p->data.snake_x] |= (0b1 << p->data.snake_y);
+        p = p->next;
+      }
 
-      p = p->next;
+      if (HAL_GetTick() % (game_speed /3) < (game_speed /6))
+      {
+        screen_content[coord_food.x_food] |= (0b1 << coord_food.y_food);
+      }
+
+      set_led_matrix(screen_content);
+
+      osDelay(game_speed /10);
     }
-         set_led_matrix(screen_content);
 
-         osDelay(40);
-    }
+    if (direction == OVER) {
+      for (int i = 0; i < 3; i++) {
 
-    if(direction == OVER) {
-      for (int i= 0; i<3; i++){
+        set_led_matrix(visconti_snake);
+        osDelay(400);
 
-
-      set_led_matrix(visconti_snake);
-      osDelay (400);
-
-
-      set_led_matrix(visconti_snake2);
-      osDelay (400);
+        set_led_matrix(visconti_snake2);
+        osDelay(400);
       }
 
       clear_led_matrix();
@@ -641,13 +670,57 @@ void StartDisplayTask(void const * argument)
 
       direction = STOP;
 
-
-
     }
-    }
-
+  }
 
   /* USER CODE END StartDisplayTask */
+}
+
+/* USER CODE BEGIN Header_StartFoodScoreTask */
+/**
+* @brief Function implementing the foodScoreTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartFoodScoreTask */
+void StartFoodScoreTask(void const * argument)
+{
+
+
+
+  /* USER CODE BEGIN StartFoodScoreTask */
+
+  /* Infinite loop */
+  for(;;)
+  {
+    if (food_eaten){
+      coord_t temp;
+
+        do {
+          coord_food.x_food = (HAL_RNG_GetRandomNumber(&hrng)) % 7;
+      osDelay(1);
+      coord_food.y_food = (HAL_RNG_GetRandomNumber(&hrng)) % 7;
+      osDelay(1);
+
+
+      temp.snake_x = coord_food.x_food;
+      temp.snake_y = coord_food.y_food;
+
+        }
+        while
+          (search(head, temp));
+
+        score +=5;
+        food_eaten = 0;
+      }
+
+      //x_food = 3;
+      //y_food = 4;
+
+
+
+  }
+  /* USER CODE END StartFoodScoreTask */
 }
 
 /**

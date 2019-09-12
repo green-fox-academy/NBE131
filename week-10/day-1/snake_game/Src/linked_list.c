@@ -10,7 +10,7 @@ void init_list(node_t **head)
 
 void push_back(node_t **head, coord_t data)
 {
-    node_t *new_node = (node_t *) malloc(sizeof(node_t));
+    node_t *new_node = (node_t *) pvPortMalloc(sizeof(node_t));
     printf("%x \n", (int) new_node);
     new_node->data = data;
     new_node->next = NULL;
@@ -34,7 +34,7 @@ void push_back(node_t **head, coord_t data)
 void push_front(node_t **head, coord_t data)
 {
 
-    node_t *new_node = (node_t *) malloc(sizeof(node_t));
+    node_t *new_node = (node_t *) pvPortMalloc(sizeof(node_t));
     new_node->data = data;
 
     new_node->next = *head;
@@ -49,7 +49,7 @@ void push_front(node_t **head, coord_t data)
 void insert(node_t **head, coord_t data, node_t *after)
 {
 
-    node_t *new_node = (node_t *) malloc(sizeof(node_t));
+    node_t *new_node = (node_t *) pvPortMalloc(sizeof(node_t));
     new_node->data.snake_x = data.snake_x;
     new_node->data.snake_y = data.snake_y;
 
@@ -99,7 +99,7 @@ node_t *pop_front(node_t **headptr)
     node_t *p = *headptr;
     if (p !=NULL) {
         *headptr = p -> next;
-        free((void*)p);
+        vPortFree((void*)p);
     }
     return *headptr;
 }
@@ -135,7 +135,7 @@ coord_t pop_back(node_t *head)
     }
 
     coord_t data = p -> next -> data;
-    free((void *) p -> next);
+    vPortFree((void *) p -> next);
     p-> next = NULL;
 
     return data;
